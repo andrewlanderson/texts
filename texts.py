@@ -14,58 +14,84 @@ Created on Thu Nov 30 21:04:56 2017
 
 
 ##get data
+
+##get data
 #with open("/Users/andy/Desktop/Texts/sms-20171129230423-0.xml", "r") as f:
 #    fileA = f.read()
 #with open("/Users/andy/Desktop/Texts/sms-20171129230423-1.xml", "r") as f:
 #    fileB = f.read()
 #with open("/Users/andy/Desktop/Texts/SignalPlaintextBackup.xml", "r") as f:
 #    fileC = f.read()
-#    
+#with open("/Users/andy/Desktop/Texts/SignalPlaintextBackupFeb2018.xml", "r") as f:
+#    fileD = f.read()    
 ## clean data
 #soupA = BeautifulSoup(fileA)
 #soupB = BeautifulSoup(fileB)
 #soupC = BeautifulSoup(fileC)
+#soupD = BeautifulSoup(fileD)
+#
+#
 #
 #messagesA = soupA("message")
 #messagesB = soupB("message")
 #messagesC = soupC("sms")
+#messagesD = soupD("sms")
 #
 ##total = len(messagesA)+len(messagesB)+len(messagesC) #8741
 #
-#listA = []
-#for message in messagesA:
-#    date = datetime.fromtimestamp(int(message.find("date").text[:-3]))
-#    num = re.sub('[\+\(\)\-]', "", message.find('address').text)
-#    body = parse.unquote_plus(message.text.split("\n")[2].strip())
-#    direction = "incoming" if message.find("type").text=="1" else "outgoing"
-#    listA.append({"phoneNumber":num, "date":date, "direction":direction, "body":body })
-#
-#listB = []
-#for message in messagesB:
-#    date = datetime.fromtimestamp(int(message.find("date").text[:-3]))
-#    num = re.sub('[\+\(\)\-]', "", message.find('address').text)
-#    body = parse.unquote_plus(message.text.split("\n")[2].strip())
-#    direction = "incoming" if message.find("type").text=="1" else "outgoing"
-#    listB.append({"phoneNumber":num, "date":date, "direction":direction, "body":body })
+#smsList = []
+#for messages in [messagesA, messagesB]:
+#    for message in messages:
+#        date = datetime.fromtimestamp(int(message.find("date").text[:-3]))
+#        num = re.sub('[\+\(\)\-]', "", message.find('address').text)
+#        body = parse.unquote_plus(message.text.split("\n")[2].strip())
+#        direction = "incoming" if message.find("type").text=="1" else "outgoing"
+#        smsList.append({"phoneNumber":num, "date":date, "direction":direction, "body":body })
 #
 ##type 1->incoming, 2->outgoing
-#listC = []
-#for message in messagesC:
-#    direction = "incoming" if message("type")=="1" else "outgoing"
-#    date = datetime.fromtimestamp(int(message['date'][:-3]))
-#    listC.append({"phoneNumber":re.sub('[\+\(\)\-]', "", message['address']), "body":message["body"], 
-#                  "contactName":message["contact_name"], "date":date,
-#                  "direction":direction})
+#signalList = []
+#for messages in [messagesC, messagesD]:  
+#    for message in messages:
+#        direction = "incoming" if message("type")=="1" else "outgoing"
+#        date = datetime.fromtimestamp(int(message['date'][:-3]))
+#        signalList.append({"phoneNumber":re.sub('[\+\(\)\-]', "", message['address']), "body":message["body"], 
+#                      "contactName":message["contact_name"], "date":date,
+#                      "direction":direction})
 ##    
-#messageList = listA + listB + listC
+#messageList = smsList + signalList
 
 ##index in Elasticsearch
+
+#myNum = my number as a string
 
 #es = Elasticsearch()
 #es.indices.create(index='texts', ignore=400)
 #for message in messageList:
 #    es.index(index='texts', doc_type='people', body=message)
 
+
+#playing with some different formatting
+#df = pd.DataFrame(messageList)
+#
+#def toFrom(row):
+#    if row['direction']=="incoming":
+#        to_ = myNum
+#    elif row["direction"]=="outgoing":
+#        to_ = row['phoneNumber']
+#    return to_
+#
+#def fromTo(row):
+#    if row['direction']=="incoming":
+#        from_ = row['phoneNumber']
+#    elif row["direction"]=="outgoing":
+#        from_ = myNum
+#    return from_    
+#
+#df["To"] = df.apply(toFrom, axis=1)
+#df["From"] = df.apply(fromTo, axis=1)
+#
+#df = df.drop(['body', 'contactName', "direction", 'phoneNumber'], 1)
+#df["myNum"] = myNum
 
 ################################
 #whoosh index 
@@ -111,7 +137,7 @@ from whoosh.query import Term
 
 
 qp = QueryParser("phoneNumber", schema=ix.schema)
-q = qp.parse("912255*")
+q = qp.parse("*")
 #searcher = ix.searcher()
 
 
